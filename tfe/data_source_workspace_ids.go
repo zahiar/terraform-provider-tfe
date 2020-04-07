@@ -29,8 +29,9 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 			},
 
 			"external_ids": {
-				Type:     schema.TypeMap,
-				Computed: true,
+				Type:       schema.TypeMap,
+				Computed:   true,
+				Deprecated: "Use ids instead. The ids attribute now returns the immutable ids of workspaces directly.",
 			},
 		},
 	}
@@ -50,9 +51,8 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		names[name.(string)] = true
 	}
 
-	// Create two maps to hold the resuls.
+	// Create map to hold the results.
 	ids := make(map[string]string, len(names))
-	externalIDs := make(map[string]string, len(names))
 
 	options := tfe.WorkspaceListOptions{}
 	for {
@@ -63,8 +63,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 
 		for _, w := range wl.Items {
 			if names["*"] || names[w.Name] {
-				ids[w.Name] = organization + "/" + w.Name
-				externalIDs[w.Name] = w.ID
+				ids[w.Name] = w.ID
 			}
 		}
 
@@ -77,8 +76,11 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		options.PageNumber = wl.NextPage
 	}
 
+	// Make ids and external_ids return the same values
+	// in preparation for deprecating external_ids
 	d.Set("ids", ids)
-	d.Set("external_ids", externalIDs)
+	d.Set("external_ids", ids)
+
 	d.SetId(fmt.Sprintf("%s/%d", organization, schema.HashString(id)))
 
 	return nil
