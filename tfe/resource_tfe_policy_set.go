@@ -33,7 +33,12 @@ func resourceTFEPolicySet() *schema.Resource {
 			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
+			},
+
+			"organization_external_id": {
+				Type:     schema.TypeString,
 				ForceNew: true,
+				Computed: true,
 			},
 
 			"global": {
@@ -197,6 +202,7 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 
 	if policySet.Organization != nil {
 		d.Set("organization", policySet.Organization.Name)
+		d.Set("organization_external_id", policySet.Organization.ExternalID)
 	}
 
 	// Set VCS policy set options.
