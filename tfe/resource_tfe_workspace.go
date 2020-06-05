@@ -5,7 +5,7 @@ import (
 	"log"
 	"regexp"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -20,6 +20,17 @@ func resourceTFEWorkspace() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
+		//CustomizeDiff: customdiff.Sequence(
+		//	// ForceNew if workspace_external_id is changing from a non-empty value to another non-empty value
+		//	// If workspace_external_id is changing from an empty value to a non-empty value or a non-empty value
+		//	// to an empty value, we know we are switching between workspace_external_id and workspace_id because
+		//	// we ensure later that one of them has to be set.
+		//	customdiff.ForceNewIfChange("organization_external_id", func(old, new, meta interface{}) bool {
+		//		oldOrganizationExternalID := old.(string)
+		//		newOrganizationExternalID := new.(string)
+		//		return oldOrganizationExternalID != newOrganizationExternalID
+		//	}),
+		//),
 
 		SchemaVersion: 1,
 		StateUpgraders: []schema.StateUpgrader{
@@ -39,7 +50,12 @@ func resourceTFEWorkspace() *schema.Resource {
 			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
+			},
+
+			"organization_external_id": {
+				Type:     schema.TypeString,
 				ForceNew: true,
+				Computed: true,
 			},
 
 			"auto_apply": {
@@ -220,6 +236,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("external_id", workspace.ID)
 	d.Set("organization", workspace.Organization.Name)
+	d.Set("organization_external_id", workspace.Organization.ExternalID)
 
 	var sshKeyID string
 	if workspace.SSHKey != nil {
