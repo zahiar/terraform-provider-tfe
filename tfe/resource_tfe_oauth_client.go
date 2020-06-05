@@ -13,13 +13,19 @@ func resourceTFEOAuthClient() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceTFEOAuthClientCreate,
 		Read:   resourceTFEOAuthClientRead,
+		Update: resourceTFEOAuthClientUpdate,
 		Delete: resourceTFEOAuthClientDelete,
 
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
+			},
+
+			"organization_external_id": {
+				Type:     schema.TypeString,
 				ForceNew: true,
+				Computed: true,
 			},
 
 			"api_url": {
@@ -125,6 +131,7 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("api_url", oc.APIURL)
 	d.Set("http_url", oc.HTTPURL)
 	d.Set("organization", oc.Organization.Name)
+	d.Set("organization_external_id", oc.Organization.ExternalID)
 	d.Set("service_provider", string(oc.ServiceProvider))
 
 	switch len(oc.OAuthTokens) {
@@ -137,6 +144,10 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	return nil
+}
+
+func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) error {
+	return resourceTFEOAuthClientRead(d, meta)
 }
 
 func resourceTFEOAuthClientDelete(d *schema.ResourceData, meta interface{}) error {
