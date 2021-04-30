@@ -65,3 +65,25 @@ func unpackWorkspaceID(id string) (organization, name string, err error) {
 
 	return s[0], s[1], nil
 }
+
+func readWorkspaceStateConsumers(w *tfe.Workspace, client *tfe.Client) (bool, []interface{}, error) {
+	var remoteStateConsumerIDs []interface{}
+	if !w.GlobalRemoteState {
+		workspaceList, err := client.Workspaces.RemoteStateConsumers(ctx, w.ID)
+		if err != nil {
+			if err == tfe.ErrResourceNotFound {
+				// Nothing. Old TFE. Indicate the old implicit behavior of run
+				// tokens to this computed attribute by setting it to true.
+				return true, remoteStateConsumerIDs, nil
+			} else {
+				return false, remoteStateConsumerIDs, err
+			}
+		}
+
+		for _, remoteStateConsumer := range workspaceList.Items {
+			remoteStateConsumerIDs = append(remoteStateConsumerIDs, remoteStateConsumer.ID)
+		}
+	}
+
+	return w.GlobalRemoteState, remoteStateConsumerIDs, nil
+}

@@ -345,26 +345,15 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("vcs_repo", vcsRepo)
 
-	var remoteStateConsumerIDs []interface{}
-	if !workspace.GlobalRemoteState {
-		workspaceList, err := tfeClient.Workspaces.RemoteStateConsumers(ctx, id)
-		if err != nil {
-			if err == tfe.ErrResourceNotFound {
-				// Nothing. Old TFE. Indicate the old implicit behavior of run
-				// tokens to this computed attribute by setting it to true.
-				d.Set("global_remote_state", true)
-				return nil
-			} else {
-				return fmt.Errorf(
-					"Error reading remote state consumers workspace %s: %v", id, err)
-			}
-		}
+	globalRemoteState, stateConsumerIds, err := readWorkspaceStateConsumers(workspace, tfeClient)
+	if err != nil {
+		return fmt.Errorf(
+			"Error reading remote state consumers workspace %s: %v", id, err)
+	}
 
-		for _, remoteStateConsumer := range workspaceList.Items {
-			remoteStateConsumerIDs = append(remoteStateConsumerIDs, remoteStateConsumer.ID)
-		}
-		d.Set("global_remote_state", workspace.GlobalRemoteState)
-		d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
+	d.Set("global_remote_state", globalRemoteState)
+	if !globalRemoteState {
+		d.Set("remote_state_consumer_ids", stateConsumerIds)
 	}
 
 	return nil
