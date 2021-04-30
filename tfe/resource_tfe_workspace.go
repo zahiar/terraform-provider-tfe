@@ -311,7 +311,6 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("description", workspace.Description)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
-	d.Set("global_remote_state", workspace.GlobalRemoteState)
 	d.Set("operations", workspace.Operations)
 	d.Set("execution_mode", workspace.ExecutionMode)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
@@ -350,14 +349,21 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	if !workspace.GlobalRemoteState {
 		workspaceList, err := tfeClient.Workspaces.RemoteStateConsumers(ctx, id)
 		if err != nil {
-			return fmt.Errorf(
-				"Error reading remote state consumers workspace %s: %v", id, err)
+			if err == tfe.ErrResourceNotFound {
+				// Nothing. Old TFE.
+				return nil
+			} else {
+				return fmt.Errorf(
+					"Error reading remote state consumers workspace %s: %v", id, err)
+			}
 		}
+
 		for _, remoteStateConsumer := range workspaceList.Items {
 			remoteStateConsumerIDs = append(remoteStateConsumerIDs, remoteStateConsumer.ID)
 		}
+		d.Set("global_remote_state", workspace.GlobalRemoteState)
+		d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
 	}
-	d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
 
 	return nil
 }
