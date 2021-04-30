@@ -350,7 +350,9 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		workspaceList, err := tfeClient.Workspaces.RemoteStateConsumers(ctx, id)
 		if err != nil {
 			if err == tfe.ErrResourceNotFound {
-				// Nothing. Old TFE.
+				// Nothing. Old TFE. Indicate the old implicit behavior of run
+				// tokens to this computed attribute by setting it to true.
+				d.Set("global_remote_state", true)
 				return nil
 			} else {
 				return fmt.Errorf(
