@@ -30,12 +30,19 @@ func dataSourceTFEOrganizations() *schema.Resource {
 func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	log.Printf("[DEBUG] Listing all organizations")
-	orgs, err := tfeClient.Organizations.List(ctx, tfe.OrganizationListOptions{})
-	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			return fmt.Errorf("Could not list organizations.")
+	log.Printf("[DEBUG] Listing all organizations (admin)")
+	orgs, err := tfeClient.Admin.Organizations.List(ctx, tfe.AdminOrganizationListOptions{})
+
+	if err == tfe.ErrResourceNotFound {
+		log.Printf("[DEBUG] Listing all organizations (non-admin)")
+		orgs, err := tfeClient.Organizations.List(ctx, tfe.OrganizationListOptions{})
+		if err != nil {
+			if err == tfe.ErrResourceNotFound {
+				return fmt.Errorf("Could not list organizations.")
+			}
+			return fmt.Errorf("Error retrieving organizations: %v.", err)
 		}
+	} else if err != nil {
 		return fmt.Errorf("Error retrieving organizations: %v.", err)
 	}
 
