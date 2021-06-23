@@ -3,6 +3,9 @@
 FEATURES:
 * **New Data Sources:** d/tfe_organizations, d/tfe_organization [#320](https://github.com/hashicorp/terraform-provider-tfe/pull/320)
 
+ENHANCEMENTS:
+* r/tfe_workspace, d/tfe_workspace: Add structured run output setting ([#330](https://github.com/hashicorp/terraform-provider-tfe/pull/330))
+
 ## 0.25.3 (May 18, 2021)
 
 BUG FIXES:
