@@ -21,15 +21,23 @@ func resourceTFEPolicySetVersion() *schema.Resource {
 				ForceNew: true,
 			},
 
-			"policies_path_contents_checksum": {
+			"policies_path": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"policies_path": {
+			"policies_path_contents_checksum": {
 				Type:     schema.TypeString,
-				Required: true,
+				Computed: true,
+			},
+
+			// This is really a computed property. However, marking it as "optional"
+			// allows us to use ForceNew to tell Terraform to recreate the policy set
+			// version if the contents of the policies source directory has changed.
+			"policies_path_contents_changed": {
+				Type:     schema.TypeBool,
+				Optional: true,
 				ForceNew: true,
 			},
 
@@ -64,6 +72,19 @@ func resourceTFEPolicySetVersionRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("status", policySetVersion.Status)
 	d.Set("error_message", policySetVersion.ErrorMessage)
 
+	log.Printf("[DEBUG] Compute checksum for policy set files")
+
+	policiesPath := d.Get("policies_path").(string)
+	currentChecksum := d.Get("policies_path_contents_checksum")
+
+	newChecksum, err := hashPolicies(policiesPath)
+	if err != nil {
+		return fmt.Errorf("Error generating the checksum for the source path files: %v", err)
+	}
+
+	d.Set("policies_path_contents_changed", currentChecksum != newChecksum)
+	d.Set("policies_path_contents_checksum", newChecksum)
+
 	return nil
 }
 
@@ -81,6 +102,13 @@ func resourceTFEPolicySetVersionCreate(d *schema.ResourceData, meta interface{})
 	if err != nil {
 		return fmt.Errorf("Error uploading policies for policy set version %s: %v", psv.ID, err)
 	}
+
+	checksum, err := hashPolicies(policiesPath)
+	if err != nil {
+		return fmt.Errorf("Error generating the checksum for the source path files: %v", err)
+	}
+
+	d.Set("policies_path_contents_checksum", checksum)
 
 	d.SetId(psv.ID)
 
