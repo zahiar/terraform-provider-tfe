@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -122,6 +123,75 @@ func TestProvider_versionConstraints(t *testing.T) {
 		if err != nil && !strings.Contains(err.Error(), tc.result) {
 			t.Fatalf("%s: expected error to contain %q, got: %v", name, tc.result, err)
 		}
+	}
+}
+
+func TestFOOO(t *testing.T) {
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+	}
+	fmt.Println(dir)
+}
+
+func TestProvider_configFile(t *testing.T) {
+	fileName := "test-fixtures/state-versions/terraform.tfstate"
+	path, err := os.Getwd()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	testEnvLocation := fmt.Sprintf("%s/test-fixtures/env", path)
+	originalHome := os.Getenv("HOME")
+	fmt.Println(fmt.Sprintpath)
+	cases := map[string]struct {
+		setupEnvFiles func()
+		resetEnvFiles func()
+		result        string
+	}{
+		"has TF_CLI_CONFIG_FILE": {
+			setupEnvFiles: func() {
+				os.Setenv("HOME", testEnvLocation)
+				os.Setenv("TF_CLI_CONFIG_FILE", "TODO")
+			},
+			resetEnvFiles: func() {
+				os.Setenv("HOME", originalHome)
+			},
+		},
+		"has TERRAFORM_CONFIG": {
+			setupEnvFiles: func() {
+				os.Setenv("HOME", testEnvLocation)
+				// keep TF_CLI_CONFIG_FILE empty
+				os.Setenv("TF_CLI_CONFIG_FILE", "")
+				os.Setenv("TERRAFORM_CONFIG", "TODO")
+			},
+			resetEnvFiles: func() {
+				os.Setenv("HOME", originalHome)
+			},
+		},
+		"has .terraformrc": {
+			setupEnvFiles: func() {
+				os.Setenv("HOME", testEnvLocation)
+				// keep TF_CLI_CONFIG_FILE empty
+				os.Setenv("TF_CLI_CONFIG_FILE", "")
+				// keep TERRAFORM_CONFIG empty
+				os.Setenv("TERRAFORM_CONFIG", "")
+
+				// TODO:
+				// create .terraformrc file in the test-fixtures/env folder
+			},
+			resetEnvFiles: func() {
+				os.Setenv("HOME", originalHome)
+				// TODO:
+				// remove .terraformrc file in the test-fixtures/env folder
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		defer tc.resetEnvFiles()
+		tc.setupEnvFiles()
+
+		// TODO: test config
+		//	config := cliConfig()
 	}
 }
 
